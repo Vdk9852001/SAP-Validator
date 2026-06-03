@@ -1,83 +1,141 @@
 #!/usr/bin/env python3
 """
 SAP Migration Post-Load Validator — CLI
-Usage:
-    python validate.py --source <csv> --target <csv/xlsx> [options]
 
-Examples:
-    python validate.py --source transformed_materials.csv --target s4hana_export.csv
-    python validate.py --source data/mat.csv --target data/s4h.xlsx --output-dir results/
-    python validate.py --source mat.csv --target s4h.csv --target-delimiter ";"
+AUTO (default):
+    python validate.py --source transformed.csv --target s4hana_export.csv
+
+PREVIEW mapping + numeric detection without running:
+    python validate.py --source mat.csv --target s4h.csv --show-mapping
+
+OVERRIDE join key:
+    python validate.py --source mat.csv --target s4h.csv --join-key WERKS
+
+OVERRIDE tolerance for specific columns:
+    python validate.py --source mat.csv --target s4h.csv --tolerance STPRS=0.05
+    python validate.py --source mat.csv --target s4h.csv --tolerance BRGEW=0.002 --tolerance STPRS=0.05
 """
 
 import argparse
 import sys
-import os
 from pathlib import Path
 from datetime import datetime
 
-# Allow running from project root
 sys.path.insert(0, str(Path(__file__).parent))
 
-from core.validator import MaterialValidator, MATERIAL_FIELD_MAP
+from core.validator import MaterialValidator
 from core.reporter import generate_excel_report, generate_html_report
 
 
 def parse_args():
     p = argparse.ArgumentParser(
-        description="SAP 4.7 → S/4HANA Material Master Post-Load Validator",
+        description="SAP 4.7 → S/4HANA Post-Load Validator (fully auto-detecting)",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=__doc__,
     )
-    p.add_argument("--source", required=True,
-                   help="Path to transformed CSV from SAP 4.7 (source)")
-    p.add_argument("--target", required=True,
-                   help="Path to exported file from S/4HANA Public Cloud (target)")
-    p.add_argument("--source-delimiter", default=",",
-                   help="CSV delimiter for source file (default: ,)")
-    p.add_argument("--target-delimiter", default=",",
-                   help="CSV delimiter for target file (default: ,)")
-    p.add_argument("--output-dir", default="reports",
-                   help="Directory for output reports (default: ./reports)")
-    p.add_argument("--max-mismatch-rows", type=int, default=100,
-                   help="Max mismatch rows captured per field (default: 100)")
-    p.add_argument("--no-excel", action="store_true",
-                   help="Skip Excel report generation")
-    p.add_argument("--no-html", action="store_true",
-                   help="Skip HTML report generation")
-    p.add_argument("--list-fields", action="store_true",
-                   help="Print the default field mapping and exit")
+    p.add_argument("--source",            required=True)
+    p.add_argument("--target",            required=True)
+    p.add_argument("--source-delimiter",  default=",")
+    p.add_argument("--target-delimiter",  default=",")
+    p.add_argument("--join-key",          default=None)
+    p.add_argument("--tolerance",         action="append", default=[],
+                   metavar="COL=VALUE",
+                   help="Override tolerance for a column e.g. --tolerance STPRS=0.05")
+    p.add_argument("--output-dir",        default="reports")
+    p.add_argument("--max-mismatch-rows", type=int, default=100)
+    p.add_argument("--show-mapping",      action="store_true",
+                   help="Preview auto-detected mapping and numerics then exit")
+    p.add_argument("--no-excel",          action="store_true")
+    p.add_argument("--no-html",           action="store_true")
     return p.parse_args()
 
 
+def parse_tolerance_overrides(raw: list) -> dict:
+    out = {}
+    for item in raw:
+        try:
+            col, val = item.split("=", 1)
+            out[col.strip().upper()] = float(val.strip())
+        except ValueError:
+            print(f"  ⚠  Ignoring bad --tolerance value: {item!r}  (expected COL=VALUE)")
+    return out
+
+
+def print_mapping(mapping):
+    print(f"\n  Join key      : {mapping.join_key}")
+    print(f"  Source columns: {mapping.total_source_cols}  |  "
+          f"Target columns: {mapping.total_target_cols}")
+
+    print(f"\n  ✅ Fields validated ({len(mapping.matched_fields)}):")
+    for col in mapping.matched_fields:
+        tag = ""
+        if col in mapping.numeric_fields:
+            tol = mapping.tolerance_map.get(col, "?")
+            tag = f"  [numeric, tol ±{tol}]"
+        print(f"     {col}{tag}")
+
+    if mapping.source_only_fields:
+        print(f"\n  ⚠  Source-only — skipped ({len(mapping.source_only_fields)}):")
+        for col in mapping.source_only_fields:
+            print(f"     {col}")
+
+    if mapping.target_only_fields:
+        print(f"\n  ℹ  Target-only — skipped ({len(mapping.target_only_fields)}):")
+        for col in mapping.target_only_fields:
+            print(f"     {col}")
+
+    print(f"\n  🔢 Auto-detected numeric columns ({len(mapping.numeric_fields)}):")
+    if mapping.numeric_fields:
+        for col in mapping.numeric_fields:
+            print(f"     {col:<20}  tolerance ±{mapping.tolerance_map[col]}")
+    else:
+        print("     (none)")
+    print()
+
+
 def main():
-    args = parse_args()
+    args         = parse_args()
+    tol_override = parse_tolerance_overrides(args.tolerance)
 
-    if args.list_fields:
-        print("\nDefault Material Field Mapping (source → target):")
-        print(f"  {'Source (CSV)':25s}  {'Target (S/4HANA)':30s}")
-        print("  " + "-" * 57)
-        for src, tgt in MATERIAL_FIELD_MAP.items():
-            print(f"  {src:25s}  {tgt:30s}")
-        print()
-        return 0
-
-    # Validate file existence
     for path, label in [(args.source, "Source"), (args.target, "Target")]:
         if not Path(path).exists():
             print(f"❌  {label} file not found: {path}")
             return 1
 
-    print("\n" + "═" * 60)
-    print("  SAP Material Master — Post-Load Validator")
-    print("═" * 60)
+    print("\n" + "═" * 64)
+    print("  SAP Material Master — Post-Load Validator  (Auto-Detect)")
+    print("═" * 64)
     print(f"  Source : {args.source}")
     print(f"  Target : {args.target}")
-    print("═" * 60 + "\n")
+    if tol_override:
+        print(f"  Tolerance overrides: {tol_override}")
+    print("═" * 64)
 
-    validator = MaterialValidator()
+    validator = MaterialValidator(
+        join_key=args.join_key,
+        tolerance_map=tol_override or None,
+    )
 
-    print("▶ Running validation…")
+    # ── Show-mapping preview ─────────────────────────────────────────────────
+    if args.show_mapping:
+        import pandas as pd
+        print("\n▶ Sampling files for column and numeric detection…")
+        src_df = pd.read_csv(args.source, dtype=str, encoding="utf-8-sig",
+                             delimiter=args.source_delimiter)
+        tgt_df = pd.read_csv(args.target, dtype=str, encoding="utf-8-sig",
+                             delimiter=args.target_delimiter)
+        src_df.columns = src_df.columns.str.strip().str.upper()
+        tgt_df.columns = tgt_df.columns.str.strip().str.upper()
+        join_key = validator._detect_join_key(src_df, tgt_df)
+        if not join_key:
+            print("  ❌ No common join key found.")
+            return 2
+        _, mapping = validator._build_field_map(src_df, tgt_df, join_key)
+        print_mapping(mapping)
+        return 0
+
+    # ── Full validation ──────────────────────────────────────────────────────
+    print("\n▶ Auto-detecting columns, numerics, and tolerances…")
     result = validator.validate(
         source_path=args.source,
         target_path=args.target,
@@ -88,49 +146,49 @@ def main():
 
     if result.errors:
         for e in result.errors:
-            print(f"  ❌ ERROR: {e}")
+            print(f"\n  ❌ ERROR: {e}")
         return 2
 
-    # Print quick summary to console
+    if result.mapping:
+        print_mapping(result.mapping)
+
     ss = result.summary_stats
-    print(f"\n  Records   : {result.records_matched:,} matched "
+    print(f"  Records : {result.records_matched:,} matched "
           f"| {result.records_only_in_source:,} source-only "
           f"| {result.records_only_in_target:,} target-only")
-    print(f"  Fields    : {ss['fields_passed']}/{ss['total_fields_validated']} passed "
-          f"({ss['pass_rate_pct']}%)")
-    print()
+    print(f"  Fields  : {ss['fields_passed']}/{ss['total_fields_validated']} "
+          f"passed ({ss['pass_rate_pct']}%)\n")
 
-    # Print field table
-    print(f"  {'Field':<22} {'Match%':>7}  {'Status'}")
-    print("  " + "-" * 40)
+    print(f"  {'Field':<22} {'Type':<10} {'Tolerance':>10}  {'Match%':>7}  Status")
+    print("  " + "─" * 60)
     for fr in result.field_results:
-        icon = "✅" if fr.status == "PASS" else "❌"
-        print(f"  {fr.field_source:<22} {fr.match_pct:>6.1f}%  {icon} {fr.status}")
+        icon    = "✅" if fr.status == "PASS" else "❌"
+        ftype   = "numeric" if fr.is_numeric else "string"
+        tol_str = f"±{fr.tolerance_used}" if fr.is_numeric else "—"
+        print(f"  {fr.field_source:<22} {ftype:<10} {tol_str:>10}  "
+              f"{fr.match_pct:>6.1f}%  {icon} {fr.status}")
 
-    # Generate reports
-    ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+    ts      = datetime.now().strftime("%Y%m%d_%H%M%S")
     out_dir = Path(args.output_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    print("\n" + "─" * 60)
+    print("\n" + "─" * 64)
     if not args.no_excel:
         xl_path = out_dir / f"validation_{ts}.xlsx"
         try:
             generate_excel_report(result, str(xl_path))
-            print(f"  📊 Excel  : {xl_path}")
+            print(f"  📊 Excel : {xl_path}")
         except ImportError:
             print("  ⚠ Excel skipped (pip install openpyxl)")
 
     if not args.no_html:
         html_path = out_dir / f"validation_{ts}.html"
         generate_html_report(result, str(html_path))
-        print(f"  🌐 HTML   : {html_path}")
+        print(f"  🌐 HTML  : {html_path}")
 
-    overall = result.overall_status
-    icon = "✅" if overall == "PASS" else "❌"
-    print(f"\n  {icon}  Overall Status: {overall}\n")
-
-    return 0 if overall == "PASS" else 3
+    icon = "✅" if result.overall_status == "PASS" else "❌"
+    print(f"\n  {icon}  Overall: {result.overall_status}\n")
+    return 0 if result.overall_status == "PASS" else 3
 
 
 if __name__ == "__main__":
