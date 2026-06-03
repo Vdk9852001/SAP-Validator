@@ -1,7 +1,7 @@
 """
 SAP Migration Post-Load Validator
 - Auto-detects field mapping from column headers
-- Auto-detects numeric columns by sampling actual data values (no hardcoding)
+- Auto-detects numeric columns by sampling actual data values
 - Auto-detects tolerances based on the scale of values in each numeric column
 """
 
@@ -98,7 +98,7 @@ class MaterialValidator:
     Manual overrides (all optional):
       field_map     = {"SRC_COL": "TGT_COL"}
       join_key      = "MATNR"
-      tolerance_map = {"STPRS": 0.05}   per-column override only
+      tolerance_map = {"STPRS": 0.05}
     """
 
     def __init__(
@@ -199,17 +199,10 @@ class MaterialValidator:
     def _detect_numeric_columns(
         self, src_df: pd.DataFrame, tgt_df: pd.DataFrame, columns: list
     ) -> dict:
-        """
-        Sample actual data values to decide if a column is numeric.
-        Tolerance is auto-scaled from the median value magnitude.
-        User overrides in self.tolerance_overrides take precedence.
-        """
         numeric_cols = {}
-
         for col in columns:
             src_vals = src_df[col].dropna().head(self.numeric_sample_rows)
             tgt_vals = tgt_df[col].dropna().head(self.numeric_sample_rows)
-
             if len(src_vals) == 0 or len(tgt_vals) == 0:
                 continue
 
@@ -225,7 +218,6 @@ class MaterialValidator:
 
             if (parse_rate(src_vals) >= self.numeric_threshold and
                     parse_rate(tgt_vals) >= self.numeric_threshold):
-
                 if col in self.tolerance_overrides:
                     tol = self.tolerance_overrides[col]
                 else:
@@ -237,14 +229,11 @@ class MaterialValidator:
                             pass
                     median = float(np.median(all_vals)) if all_vals else 0.0
                     tol = self._scale_tolerance(median)
-
                 numeric_cols[col] = tol
-
         return numeric_cols
 
     @staticmethod
     def _scale_tolerance(median_val: float) -> float:
-        """Scale tolerance from the magnitude of the column's median value."""
         if median_val == 0:     return 0.0
         elif median_val < 1:    return 0.0001
         elif median_val < 10:   return 0.001
@@ -255,7 +244,6 @@ class MaterialValidator:
     def _build_field_map(
         self, src_df: pd.DataFrame, tgt_df: pd.DataFrame, join_key: str
     ) -> tuple:
-
         if self.field_map:
             cols    = list(self.field_map.keys())
             tol_map = self._detect_numeric_columns(src_df, tgt_df, cols)
@@ -278,7 +266,7 @@ class MaterialValidator:
         only_src = sorted(src_cols - tgt_cols)
         only_tgt = sorted(tgt_cols - src_cols)
 
-        tol_map  = self._detect_numeric_columns(src_df, tgt_df, common)
+        tol_map = self._detect_numeric_columns(src_df, tgt_df, common)
         tol_map.update(self.tolerance_overrides)
 
         report = MappingReport(
