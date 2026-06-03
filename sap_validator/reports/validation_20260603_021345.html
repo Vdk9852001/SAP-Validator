@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>SAP Migration Validation Report</title>
+<style>
+  body{font-family:'Segoe UI',Arial,sans-serif;margin:0;background:#F3F6F9;color:#222}
+  .wrap{max-width:1200px;margin:0 auto;padding:32px 24px}
+  h1{color:#1B3A57;margin-bottom:4px}
+  .meta{color:#666;font-size:0.9em;margin-bottom:24px}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;margin:24px 0}
+  .card{background:#fff;border-radius:8px;padding:20px;box-shadow:0 1px 4px rgba(0,0,0,.08);text-align:center}
+  .card .num{font-size:2em;font-weight:700;color:#1B3A57}
+  .card .lbl{font-size:0.8em;color:#888;margin-top:4px}
+  .card.warn .num{color:#CC2200}
+  table{width:100%;border-collapse:collapse;background:#fff;border-radius:8px;
+         overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.08);margin-bottom:32px}
+  th{background:#1B3A57;color:#fff;padding:10px 12px;text-align:left;font-size:0.85em}
+  td{padding:9px 12px;border-bottom:1px solid #eee;font-size:0.9em}
+  tr:last-child td{border-bottom:none}
+  h2{color:#1B3A57;margin-top:40px}
+  h3{color:#333}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>SAP Material Master — Post-Load Validation Report</h1>
+  <div class="meta">
+    Run: 2026-06-03 02:13:45 &nbsp;|&nbsp;
+    Source: <code>sample_data/source_materials.csv</code> &nbsp;|&nbsp;
+    Target: <code>sample_data/target_s4hana_export.csv</code> &nbsp;|&nbsp;
+    Status: <span style="background:#CC2200;color:#fff;padding:4px 16px;border-radius:4px;font-weight:700;">FAIL</span>
+  </div>
+
+  <div class="cards">
+    <div class="card">
+      <div class="num">10</div>
+      <div class="lbl">Source Records</div>
+    </div>
+    <div class="card">
+      <div class="num">10</div>
+      <div class="lbl">Target Records</div>
+    </div>
+    <div class="card">
+      <div class="num">10</div>
+      <div class="lbl">Keys Matched</div>
+    </div>
+    <div class="card ">
+      <div class="num">0</div>
+      <div class="lbl">Only in Source</div>
+    </div>
+    <div class="card ">
+      <div class="num">0</div>
+      <div class="lbl">Only in Target</div>
+    </div>
+    <div class="card">
+      <div class="num">19/22</div>
+      <div class="lbl">Fields Passed</div>
+    </div>
+    <div class="card warn">
+      <div class="num">3</div>
+      <div class="lbl">Fields Failed</div>
+    </div>
+    <div class="card">
+      <div class="num">86.4%</div>
+      <div class="lbl">Field Pass Rate</div>
+    </div>
+  </div>
+
+  <h2>Field-Level Summary</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Source Field</th><th>Target Field</th><th>Records</th>
+        <th>Matched</th><th>Mismatched</th>
+        <th>Miss-Source</th><th>Miss-Target</th>
+        <th>Match %</th><th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr style="background:#FCE8E6">
+          <td>MAKTX</td>
+          <td>Material Description</td>
+          <td>10</td>
+          <td>9</td>
+          <td>1</td>
+          <td>0</td>
+          <td>0</td>
+          <td><b>90.0%</b></td>
+          <td><span style="color:#CC2200;font-weight:700;">FAIL</span></td>
+        </tr>
+        <tr style="background:#E6F4EA">
+          <td>MTART</td>
+          <td>Material Type</td>
+          <td>10</td>
+          <td>10</td>
+          <td>0</td>
+          <td>0</td>
+          <td>0</td>
+          <td><b>100.0%</b></td>
+          <td><span style="color:#00AA44;font-weight:700;">PASS</span></td>
+        </tr>
+        <tr style="background:#E6F4EA">
+          <td>MATKL</td>
+          <td>Material Group</td>
+          <td>10</td>
+          <td>10</td>
+          <td>0</td>
+          <td>0</td>
+          <td>0</td>
+          <td><b>100.0%</b></td>
+          <td><span style="color:#00AA44;font-weight:700;">PASS</span></td>
+        </tr>
+        <tr style="background:#E6F4EA">
+          <td>MEINS</td>
+          <td>Base Unit of Measure</td>
+          <td>10</td>
+          <td>10</td>
+          <td>0</td>
+          <td>0</td>
+          <td>0</td>
+          <td><b>100.0%</b></td>
+          <td><span style="color:#00AA44;font-weight:700;">PASS</span></td>
+        </tr>
+        <tr style="background:#FCE8E6">
+          <td>BRGEW</td>
+          <td>Gross Weight</td>
+          <td>10</td>
+          <td>9</td>
+          <td>1</td>
+          <td>0</td>
+          <td>0</td>
+          <td><b>90.0%</b></td>
+          <td><span style="color:#CC2200;font-weight:700;">FAIL</span></td>
+        </tr>
+        <tr style="background:#E6F4EA">
+          <td>NTGEW</td>
+          <td>Net Weight</td>
+          <td>10</td>
+          <td>10</td>
+          <td>0</td>
+          <td>0</td>
+          <td>0</td>
+          <td><b>100.0%</b></td>
+          <td><span style="color:#00AA44;font-weight:700;">PASS</span></td>
+        </tr>
+        <tr style="background:#E6F4EA">
+          <td>GEWEI</td>
+          <td>Weight Unit</td>
+          <td>10</td>
+          <td>10</td>
+          <td>0</td>
+          <td>0</td>
+          <td>0</td>
+          <td><b>100.0%</b></td>
+          <td><span style="color:#00AA44;font-weight:700;">PASS</span></td>
+        </tr>
+        <tr style="background:#E6F4EA">
+          <td>VOLUM</td>
+          <td>Volume</td>
+          <td>10</td>
+          <td>10</td>
+          <td>0</td>
+          <td>0</td>
+          <td>0</td>
+          <td><b>100.0%</b></td>
+          <td><span style="color:#00AA44;font-weight:700;">PASS</span></td>
+        </tr>
+        <tr style="background:#E6F4EA">
+          <td>VOLEH</td>
+          <td>Volume Unit</td>
+          <td>10</td>
+          <td>10</td>
+          <td>0</td>
+          <td>0</td>
+          <td>0</td>
+          <td><b>100.0%</b></td>
+          <td><span style="color:#00AA44;font-weight:700;">PASS</span></td>
+        </tr>
+        <tr style="background:#E6F4EA">
+          <td>BISMT</td>
+          <td>Old Material Number</td>
+          <td>10</td>
+          <td>10</td>
+          <td>0</td>
+          <td>0</td>
+          <td>0</td>
+          <td><b>100.0%</b></td>
+          <td><span style="color:#00AA44;font-weight:700;">PASS</span></td>
+        </tr>
+        <tr style="background:#E6F4EA">
+          <td>MFRPN</td>
+          <td>Manufacturer Part Number</td>
+          <td>10</td>
+          <td>10</td>
+          <td>0</td>
+          <td>0</td>
+          <td>0</td>
+          <td><b>100.0%</b></td>
+          <td><span style="color:#00AA44;font-weight:700;">PASS</span></td>
+        </tr>
+        <tr style="background:#E6F4EA">
+          <td>WERKS</td>
+          <td>Plant</td>
+          <td>10</td>
+          <td>10</td>
+          <td>0</td>
+          <td>0</td>
+          <td>0</td>
+          <td><b>100.0%</b></td>
+          <td><span style="color:#00AA44;font-weight:700;">PASS</span></td>
+        </tr>
+        <tr style="background:#E6F4EA">
+          <td>LGORT</td>
+          <td>Storage Location</td>
+          <td>10</td>
+          <td>10</td>
+          <td>0</td>
+          <td>0</td>
+          <td>0</td>
+          <td><b>100.0%</b></td>
+          <td><span style="color:#00AA44;font-weight:700;">PASS</span></td>
+        </tr>
+        <tr style="background:#E6F4EA">
+          <td>EKGRP</td>
+          <td>Purchasing Group</td>
+          <td>10</td>
+          <td>10</td>
+          <td>0</td>
+          <td>0</td>
+          <td>0</td>
+          <td><b>100.0%</b></td>
+          <td><span style="color:#00AA44;font-weight:700;">PASS</span></td>
+        </tr>
+        <tr style="background:#E6F4EA">
+          <td>DISPO</td>
+          <td>MRP Controller</td>
+          <td>10</td>
+          <td>10</td>
+          <td>0</td>
+          <td>0</td>
+          <td>0</td>
+          <td><b>100.0%</b></td>
+          <td><span style="color:#00AA44;font-weight:700;">PASS</span></td>
+        </tr>
+        <tr style="background:#E6F4EA">
+          <td>DISMM</td>
+          <td>MRP Type</td>
+          <td>10</td>
+          <td>10</td>
+          <td>0</td>
+          <td>0</td>
+          <td>0</td>
+          <td><b>100.0%</b></td>
+          <td><span style="color:#00AA44;font-weight:700;">PASS</span></td>
+        </tr>
+        <tr style="background:#E6F4EA">
+          <td>MINBE</td>
+          <td>Reorder Point</td>
+          <td>10</td>
+          <td>10</td>
+          <td>0</td>
+          <td>0</td>
+          <td>0</td>
+          <td><b>100.0%</b></td>
+          <td><span style="color:#00AA44;font-weight:700;">PASS</span></td>
+        </tr>
+        <tr style="background:#E6F4EA">
+          <td>EISBE</td>
+          <td>Safety Stock</td>
+          <td>10</td>
+          <td>10</td>
+          <td>0</td>
+          <td>0</td>
+          <td>0</td>
+          <td><b>100.0%</b></td>
+          <td><span style="color:#00AA44;font-weight:700;">PASS</span></td>
+        </tr>
+        <tr style="background:#FCE8E6">
+          <td>STPRS</td>
+          <td>Standard Price</td>
+          <td>10</td>
+          <td>9</td>
+          <td>1</td>
+          <td>0</td>
+          <td>0</td>
+          <td><b>90.0%</b></td>
+          <td><span style="color:#CC2200;font-weight:700;">FAIL</span></td>
+        </tr>
+        <tr style="background:#E6F4EA">
+          <td>VPRSV</td>
+          <td>Price Control</td>
+          <td>10</td>
+          <td>10</td>
+          <td>0</td>
+          <td>0</td>
+          <td>0</td>
+          <td><b>100.0%</b></td>
+          <td><span style="color:#00AA44;font-weight:700;">PASS</span></td>
+        </tr>
+        <tr style="background:#E6F4EA">
+          <td>PEINH</td>
+          <td>Price Unit</td>
+          <td>10</td>
+          <td>10</td>
+          <td>0</td>
+          <td>0</td>
+          <td>0</td>
+          <td><b>100.0%</b></td>
+          <td><span style="color:#00AA44;font-weight:700;">PASS</span></td>
+        </tr>
+        <tr style="background:#E6F4EA">
+          <td>WAERS</td>
+          <td>Currency</td>
+          <td>10</td>
+          <td>10</td>
+          <td>0</td>
+          <td>0</td>
+          <td>0</td>
+          <td><b>100.0%</b></td>
+          <td><span style="color:#00AA44;font-weight:700;">PASS</span></td>
+        </tr></tbody>
+  </table>
+
+  <h2>Mismatch Details</h2>
+        <h3 style="margin-top:32px;color:#CC2200">
+          ⚠ MAKTX → Material Description
+          <small style="font-size:0.7em;color:#888">(1 issues)</small>
+        </h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Material</th><th>Source Value</th>
+              <th>Target Value</th><th>Issue</th>
+            </tr>
+          </thead>
+          <tbody><tr><td>1000006</td><td>O-Ring 50x3</td><td>O-Ring 50x4</td><td>Value mismatch</td></tr></tbody>
+        </table>
+        <h3 style="margin-top:32px;color:#CC2200">
+          ⚠ BRGEW → Gross Weight
+          <small style="font-size:0.7em;color:#888">(1 issues)</small>
+        </h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Material</th><th>Source Value</th>
+              <th>Target Value</th><th>Issue</th>
+            </tr>
+          </thead>
+          <tbody><tr><td>1000003</td><td>2.1</td><td>2.5</td><td>Δ = 0.4000 (tolerance ±0.001)</td></tr></tbody>
+        </table>
+        <h3 style="margin-top:32px;color:#CC2200">
+          ⚠ STPRS → Standard Price
+          <small style="font-size:0.7em;color:#888">(1 issues)</small>
+        </h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Material</th><th>Source Value</th>
+              <th>Target Value</th><th>Issue</th>
+            </tr>
+          </thead>
+          <tbody><tr><td>1000009</td><td>65.0</td><td>70.0</td><td>Δ = 5.0000 (tolerance ±0.01)</td></tr></tbody>
+        </table>
+</div>
+</body>
+</html>
